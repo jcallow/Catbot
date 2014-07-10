@@ -1,0 +1,62 @@
+#!/bin/sh
+# /etc/init.d/Load_Node
+
+
+### BEGIN INIT INFO
+# Provides:          Load_Node
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: This script starts Node.js and runs the server code
+### END INIT INFO
+ 
+USER="pi"
+ 
+DAEMON="/home/pi/node-v0.10.26-linux-arm-pi/bin/node"
+ROOT_DIR="/var/www"
+ 
+SERVER="$ROOT_DIR/myjavascript.js"
+LOG_FILE="$ROOT_DIR/myjavascript.js.log"
+ 
+LOCK_FILE="/var/lock/node-server"
+ 
+do_start()
+{
+        if [ ! -f "$LOCK_FILE" ] ; then
+                echo -n $"Starting $SERVER: "
+		echo "" > "$LOG_FILE"
+                sudo sh -c "$DAEMON $SERVER > $LOG_FILE &"
+                echo "" > "$LOCK_FILE"
+		RETVAL=0
+        else
+                echo "$SERVER is locked."
+                RETVAL=1
+        fi
+}
+do_stop()
+{
+        echo -n $"Stopping $SERVER: "
+        pid=`ps -aefw | grep "$DAEMON $SERVER" | grep -v " grep " | awk '{print $2}'`
+        kill -9 $pid > /dev/null 2>&1
+        rm -f "$LOCK_FILE"
+	RETVAL=0;
+}
+ 
+case "$1" in
+        start)
+                do_start
+                ;;
+        stop)
+                do_stop
+                ;;
+        restart)
+                do_stop
+                do_start
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|restart}"
+                RETVAL=1
+esac
+
+exit "$RETVAL"
